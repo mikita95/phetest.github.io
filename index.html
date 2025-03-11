@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Interactive App with RealEye & Dynamic Exposures</title>
-  <!-- Google Font for a modern look -->
+  <title>Google Form & PhET Simulation</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -13,23 +12,21 @@
       font-family: 'Roboto', sans-serif;
       background: #f4f7f9;
       overflow: hidden;
-      height: 100vh;
       display: flex;
       flex-direction: column;
+      height: 100vh;
     }
-    /* Status indicator */
     #status {
       position: fixed;
       top: 20px;
       left: 20px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0, 0, 0, 0.7);
       color: #fff;
       padding: 5px 10px;
       border-radius: 4px;
       z-index: 1001;
       font-size: 14px;
     }
-    /* Controls container */
     #controls {
       position: fixed;
       top: 20px;
@@ -67,120 +64,74 @@
       border: none;
     }
   </style>
-  
-  <!-- RealEye SDK Integration for Dynamic AOIs -->
-  <script type="module">
-    import EmbeddedPageSdk from "https://app.realeye.io/sdk/js/testRunnerEmbeddableSdk-1.7.1.js";
-    
-    // Initialize the RealEye SDK when the DOM is fully loaded.
-    window.addEventListener("DOMContentLoaded", () => {
-      const debugMode = false;
-      const stimulusId = null; // Optionally set stimulus/item UUID if needed.
-      const forceRun = false;
-      window.reSdk = new EmbeddedPageSdk(debugMode, stimulusId, forceRun);
-      console.log("RealEye SDK initialized:", window.reSdk);
-    });
-  </script>
-  
-  <!-- Additional Scripts for Functionality and Dynamic Exposure -->
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      // Function to finish the eye-tracking test using both the SDK and a fallback postMessage.
-      function finishTest() {
-        if (window.reSdk && typeof window.reSdk.finishEyeTrackingTest === "function") {
-          window.reSdk.finishEyeTrackingTest();
-          console.log("RealEye SDK test finished.");
-        } else {
-          console.warn("reSdk is not available. Cannot finish test via SDK.");
-        }
-        // Fallback: send postMessage if the page was opened by RealEye.
-        if (window.opener) {
-          window.opener.postMessage('re-test-end-without-interaction', '*');
-          console.log("Fallback postMessage sent to end the test.");
-        }
-        const statusElem = document.getElementById("status");
-        if (statusElem) {
-          statusElem.textContent = "Eye-tracking test ended";
-        }
-      }
-      
-      // Attach finish-test event to the button.
-      const endTestButton = document.getElementById("endTestButton");
-      if (endTestButton) {
-        endTestButton.addEventListener("click", finishTest);
-      }
-      
-      // Fullscreen toggle functionality.
-      const fullScreenButton = document.getElementById("fullScreenButton");
-      if (fullScreenButton) {
-        fullScreenButton.addEventListener("click", function() {
-          const elem = document.documentElement;
-          if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(err => console.error("Error entering full screen:", err));
-          } else if (elem.mozRequestFullScreen) {
-            elem.mozRequestFullScreen().catch(err => console.error("Error entering full screen:", err));
-          } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
-          } else if (elem.msRequestFullscreen) {
-            elem.msRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
-          }
-        });
-      }
-      
-      // End test when the page is being unloaded.
-      window.addEventListener("beforeunload", finishTest);
-      
-      // Also end test when the page becomes hidden (e.g., switching tabs).
-      document.addEventListener("visibilitychange", function() {
-        if (document.visibilityState === "hidden") {
-          finishTest();
-        }
-      });
-      
-      // Dynamic exposures: trigger next exposure frequently via interval (every 500ms)
-      setInterval(() => {
-        if (window.reSdk && typeof window.reSdk.startNextExposure === "function") {
-          window.reSdk.startNextExposure();
-          console.log("Interval dynamic exposure sent.");
-        }
-      }, 100);
-      
-      // Also trigger next exposure on user interactions in the parent window.
-      const triggerExposure = (source, event) => {
-        if (window.reSdk && typeof window.reSdk.startNextExposure === "function") {
-          window.reSdk.startNextExposure();
-          console.log(`Dynamic exposure triggered by ${source} event:`, event.type);
-        }
-      };
-      
-      window.addEventListener("mousemove", event => triggerExposure("mouse move", event));
-      window.addEventListener("keydown", event => triggerExposure("key press", event));
-      
-      // Note: Interactions within cross-origin iframes (Google Form, PhET simulation)
-      // cannot be directly captured by the parent due to browser security restrictions.
-    });
-  </script>
 </head>
 <body>
-  <!-- Status Indicator -->
   <div id="status">Eye-tracking test active</div>
-  
-  <!-- Control Buttons -->
   <div id="controls">
     <button id="fullScreenButton">Full Screen</button>
     <button id="endTestButton">End Eye-Tracking Test</button>
   </div>
   
-  <!-- Main Container -->
-  <div class="container" data-re-aoi-name="phetest-aoi">
-    <!-- Left Panel: Embedded Google Form -->
+  <div class="container">
     <div class="left-panel">
       <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true" title="Google Form"></iframe>
     </div>
-    <!-- Right Panel: PhET Simulation -->
     <div class="right-panel">
       <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen title="PhET Simulation"></iframe>
     </div>
   </div>
+  
+  <script>
+    (function() {
+      'use strict';
+      
+      // Cache DOM elements
+      const statusEl = document.getElementById("status");
+      const fullScreenBtn = document.getElementById("fullScreenButton");
+      const endTestBtn = document.getElementById("endTestButton");
+      
+      // Function to send the RealEye end-test message and update status
+      const endEyeTrackingTest = () => {
+        if (window.opener) {
+          window.opener.postMessage('re-test-end-without-interaction', '*');
+        }
+        statusEl.textContent = "Eye-tracking test ended";
+      };
+      
+      // Event listeners to end the test on different triggers
+      endTestBtn.addEventListener("click", endEyeTrackingTest);
+      window.addEventListener("beforeunload", endEyeTrackingTest);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") endEyeTrackingTest();
+      });
+      
+      // Fullscreen functionality with cross-browser support
+      fullScreenBtn.addEventListener("click", () => {
+        const elem = document.documentElement;
+        const requestFullscreen = elem.requestFullscreen ||
+                                  elem.mozRequestFullScreen ||
+                                  elem.webkitRequestFullscreen ||
+                                  elem.msRequestFullscreen;
+        if (requestFullscreen) {
+          requestFullscreen.call(elem).catch(err => console.error("Error entering full screen:", err));
+        }
+      });
+      
+      // Toggle the visibility of the fullscreen button based on fullscreen state
+      const toggleFullScreenButton = () => {
+        const isFullScreen = document.fullscreenElement ||
+                             document.mozFullScreenElement ||
+                             document.webkitFullscreenElement ||
+                             document.msFullscreenElement;
+        fullScreenBtn.style.display = isFullScreen ? "none" : "inline-block";
+      };
+      
+      // Listen for fullscreen change events across browsers
+      document.addEventListener("fullscreenchange", toggleFullScreenButton);
+      document.addEventListener("mozfullscreenchange", toggleFullScreenButton);
+      document.addEventListener("webkitfullscreenchange", toggleFullScreenButton);
+      document.addEventListener("msfullscreenchange", toggleFullScreenButton);
+    })();
+  </script>
 </body>
 </html>
