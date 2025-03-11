@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Google Form & PhET Simulation</title>
+  <title>Interactive Test with RealEye Integration</title>
   <!-- Google Font for a modern look -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
   <style>
@@ -67,67 +67,82 @@
       border: none;
     }
   </style>
+  
+  <!-- Critical scripts in head -->
+  <script>
+    // Function to end the RealEye eye-tracking test without user interaction.
+    function finishEyeTrackingTestWithoutInteraction() {
+      if (window.opener === null) {
+        console.log('This page was not opened by RealEye so eye-tracking test cannot be finished.');
+        return;
+      }
+      window.opener.postMessage('re-test-end-without-interaction', '*');
+      console.log("RealEye test ended.");
+      // Update the status indicator.
+      var statusElem = document.getElementById("status");
+      if (statusElem) {
+        statusElem.textContent = "Eye-tracking test ended";
+      }
+    }
+    
+    // Wait until DOM is fully loaded to attach event listeners.
+    document.addEventListener("DOMContentLoaded", function() {
+      // End test on button click.
+      var endTestButton = document.getElementById("endTestButton");
+      if (endTestButton) {
+        endTestButton.addEventListener("click", finishEyeTrackingTestWithoutInteraction);
+      }
+      
+      // Fullscreen toggle functionality with error handling.
+      var fullScreenButton = document.getElementById("fullScreenButton");
+      if (fullScreenButton) {
+        fullScreenButton.addEventListener("click", function() {
+          var elem = document.documentElement;
+          if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(function(err) { console.error("Error entering full screen:", err); });
+          } else if (elem.mozRequestFullScreen) {
+            elem.mozRequestFullScreen().catch(function(err) { console.error("Error entering full screen:", err); });
+          } else if (elem.webkitRequestFullscreen) {
+            elem.webkitRequestFullscreen().catch(function(err) { console.error("Error entering full screen:", err); });
+          } else if (elem.msRequestFullscreen) {
+            elem.msRequestFullscreen().catch(function(err) { console.error("Error entering full screen:", err); });
+          }
+        });
+      }
+      
+      // End the test when the tab or window is about to be closed.
+      window.addEventListener("beforeunload", finishEyeTrackingTestWithoutInteraction);
+      
+      // Also end the test when the page becomes hidden (e.g., switching tabs).
+      document.addEventListener("visibilitychange", function() {
+        if (document.visibilityState === "hidden") {
+          finishEyeTrackingTestWithoutInteraction();
+        }
+      });
+    });
+  </script>
 </head>
 <body>
-  <!-- Eye-tracking status indicator -->
+  <!-- Status indicator -->
   <div id="status">Eye-tracking test active</div>
-  <!-- Control Buttons -->
+  
+  <!-- Control buttons -->
   <div id="controls">
     <button id="fullScreenButton">Full Screen</button>
     <button id="endTestButton">End Eye-Tracking Test</button>
   </div>
   
+  <!-- Main container with embedded panels -->
   <div class="container">
     <!-- Left Panel: Embedded Google Form -->
     <div class="left-panel">
-      <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true" title="Google Form"></iframe>
+       <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true" title="Google Form"></iframe>
     </div>
     <!-- Right Panel: PhET Simulation -->
     <div class="right-panel">
       <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen title="PhET Simulation"></iframe>
     </div>
   </div>
-  
-  <script>
-    // Function to send the RealEye end-test message
-    function endEyeTrackingTest() {
-      if (window.opener) {
-        window.opener.postMessage('re-test-end-without-interaction', '*');
-      }
-      // Update the status indicator
-      document.getElementById("status").textContent = "Eye-tracking test ended";
-    }
-    
-    // End test on button click
-    document.getElementById("endTestButton").addEventListener("click", function() {
-      endEyeTrackingTest();
-    });
-    
-    // End test when the tab or window is closed
-    window.addEventListener("beforeunload", function() {
-      endEyeTrackingTest();
-    });
-    
-    // Also end test when the page becomes hidden (e.g., tab switch)
-    document.addEventListener("visibilitychange", function() {
-      if (document.visibilityState === "hidden") {
-        endEyeTrackingTest();
-      }
-    });
-    
-    // Fullscreen functionality with error handling
-    document.getElementById("fullScreenButton").addEventListener("click", function() {
-      let elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(err => console.error("Error entering full screen:", err));
-      } else if (elem.mozRequestFullScreen) { // Firefox
-        elem.mozRequestFullScreen().catch(err => console.error("Error entering full screen:", err));
-      } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, Opera
-        elem.webkitRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
-      } else if (elem.msRequestFullscreen) { // IE/Edge
-        elem.msRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
-      }
-    });
-  </script>
 </body>
 </html>
+
