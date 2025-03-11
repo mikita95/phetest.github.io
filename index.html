@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Interactive Test with RealEye Integration</title>
+  <title>Interactive Test with RealEye Dynamic AOIs</title>
   <!-- Google Font for a modern look -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
   <style>
@@ -17,12 +17,12 @@
       flex-direction: column;
       height: 100vh;
     }
-    /* Status indicator for eye-tracking test */
+    /* Status indicator */
     #status {
       position: fixed;
       top: 20px;
       left: 20px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0,0,0,0.7);
       color: #fff;
       padding: 5px 10px;
       border-radius: 4px;
@@ -68,81 +68,109 @@
     }
   </style>
   
-  <!-- Critical scripts in head -->
-  <script>
-    // Function to end the RealEye eye-tracking test without user interaction.
-    function finishEyeTrackingTestWithoutInteraction() {
-      if (window.opener === null) {
-        console.log('This page was not opened by RealEye so eye-tracking test cannot be finished.');
-        return;
-      }
-      window.opener.postMessage('re-test-end-without-interaction', '*');
-      console.log("RealEye test ended.");
-      // Update the status indicator.
-      var statusElem = document.getElementById("status");
-      if (statusElem) {
-        statusElem.textContent = "Eye-tracking test ended";
-      }
-    }
+  <!-- RealEye SDK Integration for Dynamic AOIs -->
+  <script type="module">
+    import EmbeddedPageSdk from "https://app.realeye.io/sdk/js/testRunnerEmbeddableSdk-1.7.1.js";
     
-    // Wait until DOM is fully loaded to attach event listeners.
+    // Initialize the RealEye SDK when the UI is fully loaded.
+    window.addEventListener("DOMContentLoaded", () => {
+      const debugMode = false;
+      const stimulusId = null; // Optionally set stimulus/item UUID if needed.
+      const forceRun = false;
+      // Create the SDK instance and attach it to the global window.
+      window.reSdk = new EmbeddedPageSdk(debugMode, stimulusId, forceRun);
+      console.log("RealEye SDK initialized:", window.reSdk);
+      
+      // Example: If you want to start a new exposure when an element becomes visible,
+      // you can use IntersectionObserver with your element that has a dynamic AOI.
+      // Uncomment and customize as needed:
+      /*
+      const observer = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.intersectionRatio > 0) {
+              window.reSdk.startNextExposure();
+              observer.unobserve(entry.target);
+            }
+          });
+      }, { rootMargin: '0px', threshold: 1.0 });
+      // For example, if you have an element with id "sticky-video":
+      // observer.observe(document.getElementById('sticky-video'));
+      */
+    });
+  </script>
+  
+  <!-- Additional Scripts for Full Functionality -->
+  <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // End test on button click.
-      var endTestButton = document.getElementById("endTestButton");
-      if (endTestButton) {
-        endTestButton.addEventListener("click", finishEyeTrackingTestWithoutInteraction);
+      // Finish the eye-tracking test using the RealEye SDK.
+      function finishTest() {
+        if (window.reSdk && typeof window.reSdk.finishEyeTrackingTest === 'function') {
+          window.reSdk.finishEyeTrackingTest();
+          console.log("RealEye test ended via SDK.");
+          let statusElem = document.getElementById("status");
+          if (statusElem) {
+            statusElem.textContent = "Eye-tracking test ended";
+          }
+        } else {
+          console.warn("reSdk is not available. Cannot finish test via SDK.");
+        }
       }
       
-      // Fullscreen toggle functionality with error handling.
+      // Attach finish-test event to the button.
+      var endTestButton = document.getElementById("endTestButton");
+      if (endTestButton) {
+        endTestButton.addEventListener("click", finishTest);
+      }
+      
+      // Fullscreen toggle functionality.
       var fullScreenButton = document.getElementById("fullScreenButton");
       if (fullScreenButton) {
         fullScreenButton.addEventListener("click", function() {
           var elem = document.documentElement;
           if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(function(err) { console.error("Error entering full screen:", err); });
+            elem.requestFullscreen().catch(err => console.error("Error entering full screen:", err));
           } else if (elem.mozRequestFullScreen) {
-            elem.mozRequestFullScreen().catch(function(err) { console.error("Error entering full screen:", err); });
+            elem.mozRequestFullScreen().catch(err => console.error("Error entering full screen:", err));
           } else if (elem.webkitRequestFullscreen) {
-            elem.webkitRequestFullscreen().catch(function(err) { console.error("Error entering full screen:", err); });
+            elem.webkitRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
           } else if (elem.msRequestFullscreen) {
-            elem.msRequestFullscreen().catch(function(err) { console.error("Error entering full screen:", err); });
+            elem.msRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
           }
         });
       }
       
-      // End the test when the tab or window is about to be closed.
-      window.addEventListener("beforeunload", finishEyeTrackingTestWithoutInteraction);
+      // End the test when the page is being unloaded.
+      window.addEventListener("beforeunload", finishTest);
       
       // Also end the test when the page becomes hidden (e.g., switching tabs).
       document.addEventListener("visibilitychange", function() {
         if (document.visibilityState === "hidden") {
-          finishEyeTrackingTestWithoutInteraction();
+          finishTest();
         }
       });
     });
   </script>
 </head>
 <body>
-  <!-- Status indicator -->
+  <!-- Status Indicator -->
   <div id="status">Eye-tracking test active</div>
   
-  <!-- Control buttons -->
+  <!-- Control Buttons -->
   <div id="controls">
     <button id="fullScreenButton">Full Screen</button>
     <button id="endTestButton">End Eye-Tracking Test</button>
   </div>
   
-  <!-- Main container with embedded panels -->
+  <!-- Main Container with Dynamic AOI Attributes -->
   <div class="container">
-    <!-- Left Panel: Embedded Google Form -->
-    <div class="left-panel">
-       <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true" title="Google Form"></iframe>
+    <!-- Left Panel: Embedded Google Form with AOI attribute -->
+    <div class="left-panel" data-re-aoi-name="Google Form AOI">
+      <iframe src="https://docs.google.com/forms/d/e/YOUR_FORM_EMBED_LINK/viewform?embedded=true" title="Google Form"></iframe>
     </div>
-    <!-- Right Panel: PhET Simulation -->
-    <div class="right-panel">
+    <!-- Right Panel: PhET Simulation with AOI attribute -->
+    <div class="right-panel" data-re-aoi-name="PhET Simulation AOI">
       <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen title="PhET Simulation"></iframe>
     </div>
   </div>
 </body>
 </html>
-
