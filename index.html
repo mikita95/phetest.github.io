@@ -7,9 +7,7 @@
   <!-- Google Font for a modern look -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Roboto', sans-serif;
@@ -19,10 +17,27 @@
       flex-direction: column;
       height: 100vh;
     }
-    #endTestButton {
+    /* Status indicator for eye-tracking test */
+    #status {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      z-index: 1001;
+      font-size: 14px;
+    }
+    /* Controls container */
+    #controls {
       position: fixed;
       top: 20px;
       right: 20px;
+      z-index: 1001;
+    }
+    #controls button {
+      margin-left: 10px;
       padding: 10px 16px;
       background-color: #007bff;
       border: none;
@@ -30,10 +45,9 @@
       font-size: 14px;
       border-radius: 4px;
       cursor: pointer;
-      z-index: 1001;
       transition: background-color 0.3s;
     }
-    #endTestButton:hover {
+    #controls button:hover {
       background-color: #0056b3;
     }
     .container {
@@ -55,17 +69,22 @@
   </style>
 </head>
 <body>
-  <!-- Button to trigger ending the eye-tracking test -->
-  <button id="endTestButton">End Eye-Tracking Test</button>
+  <!-- Eye-tracking status indicator -->
+  <div id="status">Eye-tracking test active</div>
+  <!-- Control Buttons -->
+  <div id="controls">
+    <button id="fullScreenButton">Full Screen</button>
+    <button id="endTestButton">End Eye-Tracking Test</button>
+  </div>
   
   <div class="container">
     <!-- Left Panel: Embedded Google Form -->
     <div class="left-panel">
-      <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true"></iframe>
+      <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true" title="Google Form"></iframe>
     </div>
     <!-- Right Panel: PhET Simulation -->
     <div class="right-panel">
-      <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen></iframe>
+      <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen title="PhET Simulation"></iframe>
     </div>
   </div>
   
@@ -75,17 +94,39 @@
       if (window.opener) {
         window.opener.postMessage('re-test-end-without-interaction', '*');
       }
+      // Update the status indicator
+      document.getElementById("status").textContent = "Eye-tracking test ended";
     }
     
     // End test on button click
     document.getElementById("endTestButton").addEventListener("click", function() {
       endEyeTrackingTest();
-      alert('Eye-tracking test ended.');
     });
     
-    // End test when the tab/window is closed
+    // End test when the tab or window is closed
     window.addEventListener("beforeunload", function() {
       endEyeTrackingTest();
+    });
+    
+    // Also end test when the page becomes hidden (e.g., tab switch)
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "hidden") {
+        endEyeTrackingTest();
+      }
+    });
+    
+    // Fullscreen functionality with error handling
+    document.getElementById("fullScreenButton").addEventListener("click", function() {
+      let elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => console.error("Error entering full screen:", err));
+      } else if (elem.mozRequestFullScreen) { // Firefox
+        elem.mozRequestFullScreen().catch(err => console.error("Error entering full screen:", err));
+      } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, Opera
+        elem.webkitRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
+      } else if (elem.msRequestFullscreen) { // IE/Edge
+        elem.msRequestFullscreen().catch(err => console.error("Error entering full screen:", err));
+      }
     });
   </script>
 </body>
