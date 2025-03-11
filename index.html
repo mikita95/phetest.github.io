@@ -1,1 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interactive Simulation & Form</title>
+  <!-- Google Font for a modern look -->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: #f4f7f9;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #endTestButton {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      background-color: #007bff;
+      border: none;
+      color: #fff;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 1001;
+      transition: background-color 0.3s;
+    }
+    #endTestButton:hover {
+      background-color: #0056b3;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      margin: 60px 20px 20px; /* extra top margin for the button */
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .left, .right {
+      overflow: hidden;
+    }
+    .left {
+      width: 50%; /* initial width */
+    }
+    .right {
+      flex: 1;
+    }
+    .separator {
+      width: 10px;
+      cursor: col-resize;
+      background: #e0e0e0;
+      position: relative;
+    }
+    .separator::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 40%;
+      background: #bbb;
+      border-radius: 1px;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    /* Responsive design: stack vertically on small screens */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+        margin-top: 70px;
+      }
+      .separator {
+        width: 100%;
+        height: 10px;
+        cursor: row-resize;
+      }
+      .separator::before {
+        width: 40%;
+        height: 2px;
+      }
+      .left {
+        height: 50%;
+        width: 100%;
+      }
+      .right {
+        height: 50%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Button to trigger ending the eye-tracking test -->
+  <button id="endTestButton">End Eye-Tracking Test</button>
+  
+  <div class="container" id="container">
+    <!-- Left panel: PhET simulation -->
+    <div class="left" id="leftPanel">
+      <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen></iframe>
+    </div>
+    <!-- Separator for resizing -->
+    <div class="separator" id="separator"></div>
+    <!-- Right panel: Google Form (use the published embed URL) -->
+    <div class="right" id="rightPanel">
+      <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true"></iframe>
+    </div>
+  </div>
+  
+  <script>
+    // --- RealEye Integration ---
+    // Function to send the end-test message
+    function endEyeTrackingTest() {
+      if (window.opener) {
+        window.opener.postMessage('re-test-end-without-interaction', '*');
+      }
+    }
+    
+    // End test on button click
+    document.getElementById("endTestButton").addEventListener("click", function() {
+      endEyeTrackingTest();
+      alert('Eye-tracking test ended.');
+    });
+    
+    // End test when the tab/window is closed
+    window.addEventListener("beforeunload", function() {
+      endEyeTrackingTest();
+    });
+    
+    // --- Resizable Split Pane ---
+    const separator = document.getElementById('separator');
+    const leftPanel = document.getElementById('leftPanel');
+    const container = document.getElementById('container');
+    
+    let isResizing = false;
+    
+    separator.addEventListener('mousedown', function(e) {
+      isResizing = true;
+      document.body.style.cursor = 'col-resize';
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+      if (!isResizing) return;
+      // Calculate the new width for the left panel relative to the container
+      const containerRect = container.getBoundingClientRect();
+      let newLeftWidth = e.clientX - containerRect.left;
+      // Set minimum widths to avoid collapsing panels
+      if(newLeftWidth < 200) newLeftWidth = 200;
+      if(newLeftWidth > containerRect.width - 200) newLeftWidth = containerRect.width - 200;
+      leftPanel.style.width = newLeftWidth + 'px';
+    });
+    
+    document.addEventListener('mouseup', function() {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = 'default';
+      }
+    });
+  </script>
+</body>
+</html>
 
