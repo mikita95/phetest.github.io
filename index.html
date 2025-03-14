@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Google Form & PhET Simulation</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
@@ -74,10 +74,10 @@
   
   <div class="container">
     <div class="left-panel">
-      <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSepPEOwtESJq9SnIen0ap2w5h9rOfeb2Xk9b-5QV73RjqYVXw/viewform?embedded=true" title="Google Form"></iframe>
+      <iframe id="googleForm" title="Google Form"></iframe>
     </div>
     <div class="right-panel">
-      <iframe src="https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html" allowfullscreen title="PhET Simulation"></iframe>
+      <iframe id="phetSim" allowfullscreen title="PhET Simulation"></iframe>
     </div>
   </div>
   
@@ -85,7 +85,32 @@
     (function() {
       'use strict';
       
-      // Cache DOM elements
+      // 1) Define the sources for each scenario
+      const scenarios = {
+        agg: {
+          form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
+          sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html'
+        },
+        gas: {
+          form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
+          sim:  'https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html'
+        }
+      };
+      
+      // 2) Grab the scenario from the URL query parameter (e.g. ?scenario=agg)
+      const urlParams = new URLSearchParams(window.location.search);
+      const selectedScenario = urlParams.get('scenario') || 'agg'; // fallback to 'agg' if missing
+      
+      // 3) Set the iframe sources
+      const googleFormIframe = document.getElementById('googleForm');
+      const phetSimIframe   = document.getElementById('phetSim');
+      
+      // If the scenario is known, use it; otherwise default to 'agg'
+      const { form, sim } = scenarios[selectedScenario] || scenarios['agg'];
+      googleFormIframe.src = form;
+      phetSimIframe.src    = sim;
+
+      // 4) Eye-tracking related code
       const statusEl = document.getElementById("status");
       const fullScreenBtn = document.getElementById("fullScreenButton");
       const endTestBtn = document.getElementById("endTestButton");
@@ -105,7 +130,7 @@
         if (document.visibilityState === "hidden") endEyeTrackingTest();
       });
       
-      // Fullscreen functionality with cross-browser support
+      // Fullscreen functionality
       fullScreenBtn.addEventListener("click", () => {
         const elem = document.documentElement;
         const requestFullscreen = elem.requestFullscreen ||
