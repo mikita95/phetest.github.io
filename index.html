@@ -50,6 +50,11 @@
     .container {
       flex: 1;
       display: flex;
+      flex-direction: column;
+    }
+    .panel-container {
+      flex: 1;
+      display: flex;
     }
     .left-panel {
       width: 25%;
@@ -63,9 +68,18 @@
       height: 100%;
       border: none;
     }
+    /* Tutorial info styling */
+    #tutorialInfo {
+      padding: 20px;
+      background-color: #e0f7fa;
+      color: #00695c;
+      font-size: 16px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+  <!-- Eye-tracking elements -->
   <div id="status">Eye-tracking test active</div>
   <div id="controls">
     <button id="fullScreenButton">Full Screen</button>
@@ -73,10 +87,17 @@
   </div>
   
   <div class="container">
+    <!-- In non-tutorial modes the left panel holds the Google Form -->
     <div class="left-panel">
       <iframe id="googleForm" title="Google Form"></iframe>
     </div>
     <div class="right-panel">
+      <!-- Tutorial info will be injected here for tutorial mode -->
+      <div id="tutorialInfo" style="display:none;">
+        <p><strong>Welcome to Tutorial Mode!</strong></p>
+        <p>Explore the simulation on states of matter. Follow the on-screen instructions and have fun learning about gases, liquids, and solids.</p>
+        <p>When you're ready, click "Finish Tutorial" or wait for the next steps.</p>
+      </div>
       <iframe id="phetSim" allowfullscreen title="PhET Simulation"></iframe>
     </div>
   </div>
@@ -85,43 +106,65 @@
     (function() {
       'use strict';
       
-      // 1) Define the sources for each scenario
+      // Define sources for each scenario
       const scenarios = {
         agg: {
           form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
-          sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html?locale=de'
+          sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html'
         },
         gas: {
           form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
-          sim:  'https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html?locale=de'
+          sim:  'https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html'
         },
         tutorial: {
-          form: null,  // No Google Form in tutorial mode
+          form: null,  // No form in tutorial mode
           sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html?locale=de'
         }
       };
       
-      // 2) Grab the scenario from the URL query parameter (default to 'agg')
+      // Grab the scenario from URL query parameter; default to 'tutorial'
       const urlParams = new URLSearchParams(window.location.search);
-      const selectedScenario = urlParams.get('scenario') || 'agg';
+      const selectedScenario = urlParams.get('scenario') || 'tutorial';
       
-      // 3) Set the iframe sources based on scenario
+      // Get DOM elements
       const googleFormIframe = document.getElementById('googleForm');
       const phetSimIframe   = document.getElementById('phetSim');
+      const leftPanel       = document.querySelector('.left-panel');
+      const rightPanel      = document.querySelector('.right-panel');
       
-      const scenarioData = scenarios[selectedScenario] || scenarios['agg'];
+      // Get controls and tutorial info elements
+      const statusEl        = document.getElementById("status");
+      const fullScreenBtn   = document.getElementById("fullScreenButton");
+      const endTestBtn      = document.getElementById("endTestButton");
+      const tutorialInfoDiv = document.getElementById("tutorialInfo");
+      
+      const scenarioData = scenarios[selectedScenario] || scenarios['tutorial'];
       
       if (selectedScenario === 'tutorial') {
-        // Remove the left panel (Google Form) and expand the simulation panel
-        document.querySelector('.left-panel').style.display = 'none';
-        document.querySelector('.right-panel').style.width = '100%';
+        // Hide eye-tracking elements for tutorial mode
+        statusEl.style.display = 'none';
+        endTestBtn.style.display = 'none';
+        
+        // Remove the left panel and expand the simulation panel
+        leftPanel.style.display = 'none';
+        rightPanel.style.width = '100%';
+        
+        // Set simulation source
         phetSimIframe.src = scenarioData.sim;
         
-        // Create a Finish Tutorial button and add it to the controls
+        // Show tutorial description
+        tutorialInfoDiv.style.display = 'block';
+        
+        // Create a Finish Tutorial button
         const finishTutorialButton = document.createElement('button');
         finishTutorialButton.id = 'finishTutorialButton';
         finishTutorialButton.textContent = 'Finish Tutorial';
-        document.getElementById('controls').appendChild(finishTutorialButton);
+        finishTutorialButton.style.marginTop = '15px';
+        finishTutorialButton.style.padding = '10px 16px';
+        finishTutorialButton.style.fontSize = '16px';
+        finishTutorialButton.style.borderRadius = '4px';
+        finishTutorialButton.style.cursor = 'pointer';
+        tutorialInfoDiv.appendChild(finishTutorialButton);
         
         // Redirect function (update the placeholder URL as needed)
         const redirectTutorial = () => {
@@ -139,24 +182,23 @@
         phetSimIframe.src    = scenarioData.sim;
       }
       
-      // 4) Eye-tracking related code
-      const statusEl = document.getElementById("status");
-      const fullScreenBtn = document.getElementById("fullScreenButton");
-      const endTestBtn = document.getElementById("endTestButton");
+      // Only add eye-tracking functionality for non-tutorial modes
+      if (selectedScenario !== 'tutorial') {
+        const endEyeTrackingTest = () => {
+          if (window.opener) {
+            window.opener.postMessage('re-test-end-without-interaction', '*');
+          }
+          statusEl.textContent = "Eye-tracking test ended";
+        };
+        
+        endTestBtn.addEventListener("click", endEyeTrackingTest);
+        window.addEventListener("beforeunload", endEyeTrackingTest);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "hidden") endEyeTrackingTest();
+        });
+      }
       
-      const endEyeTrackingTest = () => {
-        if (window.opener) {
-          window.opener.postMessage('re-test-end-without-interaction', '*');
-        }
-        statusEl.textContent = "Eye-tracking test ended";
-      };
-      
-      endTestBtn.addEventListener("click", endEyeTrackingTest);
-      window.addEventListener("beforeunload", endEyeTrackingTest);
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") endEyeTrackingTest();
-      });
-      
+      // Fullscreen functionality (common to all modes)
       fullScreenBtn.addEventListener("click", () => {
         const elem = document.documentElement;
         const requestFullscreen = elem.requestFullscreen ||
