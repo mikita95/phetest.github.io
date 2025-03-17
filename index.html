@@ -50,11 +50,6 @@
     .container {
       flex: 1;
       display: flex;
-      flex-direction: column;
-    }
-    .panel-container {
-      flex: 1;
-      display: flex;
     }
     .left-panel {
       width: 25%;
@@ -62,6 +57,8 @@
     }
     .right-panel {
       width: 75%;
+      display: flex;
+      flex-direction: column;
     }
     iframe {
       width: 100%;
@@ -87,12 +84,12 @@
   </div>
   
   <div class="container">
-    <!-- In non-tutorial modes the left panel holds the Google Form -->
+    <!-- Left panel holds the Google Form in non-tutorial modes -->
     <div class="left-panel">
       <iframe id="googleForm" title="Google Form"></iframe>
     </div>
     <div class="right-panel">
-      <!-- Tutorial info will be injected here for tutorial mode -->
+      <!-- Tutorial info displayed in tutorial mode -->
       <div id="tutorialInfo" style="display:none;">
         <p><strong>Welcome to Tutorial Mode!</strong></p>
         <p>Explore the simulation on states of matter. Follow the on-screen instructions and have fun learning about gases, liquids, and solids.</p>
@@ -145,12 +142,16 @@
         statusEl.style.display = 'none';
         endTestBtn.style.display = 'none';
         
-        // Remove the left panel and expand the simulation panel
+        // Hide the left panel and expand the right panel to full window
         leftPanel.style.display = 'none';
         rightPanel.style.width = '100%';
+        rightPanel.style.height = '100vh';
+        rightPanel.style.display = 'flex';
+        rightPanel.style.flexDirection = 'column';
         
-        // Set simulation source
+        // Set simulation source and adjust iframe to fill remaining space
         phetSimIframe.src = scenarioData.sim;
+        phetSimIframe.style.flex = '1';
         
         // Show tutorial description
         tutorialInfoDiv.style.display = 'block';
