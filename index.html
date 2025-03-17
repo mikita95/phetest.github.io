@@ -89,33 +89,61 @@
       const scenarios = {
         agg: {
           form: 'https://docs.google.com/forms/d/e/1FAIpQLSfXrS_c5MG_qMR41DcnMGG4mBf3uADQAIr-IONgqiRDxBdJTg/viewform?embedded=true',
-          sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html'
+          sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html?locale=de'
         },
         gas: {
           form: 'https://docs.google.com/forms/d/e/1FAIpQLSc2UIJpF88ebRojX_tceWbsp8PAgiokJvu-govVeRl3CpBVEw/viewform?embedded=true',
-          sim:  'https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html'
+          sim:  'https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_all.html?locale=de'
+        },
+        tutorial: {
+          form: null,  // No Google Form in tutorial mode
+          sim:  'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_all.html?locale=de'
         }
       };
       
-      // 2) Grab the scenario from the URL query parameter (e.g. ?scenario=agg)
+      // 2) Grab the scenario from the URL query parameter (default to 'agg')
       const urlParams = new URLSearchParams(window.location.search);
-      const selectedScenario = urlParams.get('scenario') || 'agg'; // fallback to 'agg' if missing
+      const selectedScenario = urlParams.get('scenario') || 'agg';
       
-      // 3) Set the iframe sources
+      // 3) Set the iframe sources based on scenario
       const googleFormIframe = document.getElementById('googleForm');
       const phetSimIframe   = document.getElementById('phetSim');
       
-      // If the scenario is known, use it; otherwise default to 'agg'
-      const { form, sim } = scenarios[selectedScenario] || scenarios['agg'];
-      googleFormIframe.src = form;
-      phetSimIframe.src    = sim;
-
+      const scenarioData = scenarios[selectedScenario] || scenarios['agg'];
+      
+      if (selectedScenario === 'tutorial') {
+        // Remove the left panel (Google Form) and expand the simulation panel
+        document.querySelector('.left-panel').style.display = 'none';
+        document.querySelector('.right-panel').style.width = '100%';
+        phetSimIframe.src = scenarioData.sim;
+        
+        // Create a Finish Tutorial button and add it to the controls
+        const finishTutorialButton = document.createElement('button');
+        finishTutorialButton.id = 'finishTutorialButton';
+        finishTutorialButton.textContent = 'Finish Tutorial';
+        document.getElementById('controls').appendChild(finishTutorialButton);
+        
+        // Redirect function (update the placeholder URL as needed)
+        const redirectTutorial = () => {
+          window.location.href = 'YOUR_REDIRECT_URL_HERE'; // <-- Replace with your destination URL
+        };
+        
+        // Set a 5-minute timer (300,000 ms) to auto-redirect when finished
+        setTimeout(redirectTutorial, 300000);
+        
+        // Allow users to finish early via the button
+        finishTutorialButton.addEventListener('click', redirectTutorial);
+      } else {
+        // For agg and gas modes, set both the Google Form and simulation iframe sources
+        googleFormIframe.src = scenarioData.form;
+        phetSimIframe.src    = scenarioData.sim;
+      }
+      
       // 4) Eye-tracking related code
       const statusEl = document.getElementById("status");
       const fullScreenBtn = document.getElementById("fullScreenButton");
       const endTestBtn = document.getElementById("endTestButton");
       
-      // Function to send the RealEye end-test message and update status
       const endEyeTrackingTest = () => {
         if (window.opener) {
           window.opener.postMessage('re-test-end-without-interaction', '*');
@@ -123,14 +151,12 @@
         statusEl.textContent = "Eye-tracking test ended";
       };
       
-      // Event listeners to end the test on different triggers
       endTestBtn.addEventListener("click", endEyeTrackingTest);
       window.addEventListener("beforeunload", endEyeTrackingTest);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") endEyeTrackingTest();
       });
       
-      // Fullscreen functionality
       fullScreenBtn.addEventListener("click", () => {
         const elem = document.documentElement;
         const requestFullscreen = elem.requestFullscreen ||
@@ -142,7 +168,6 @@
         }
       });
       
-      // Toggle the visibility of the fullscreen button based on fullscreen state
       const toggleFullScreenButton = () => {
         const isFullScreen = document.fullscreenElement ||
                              document.mozFullScreenElement ||
@@ -151,7 +176,6 @@
         fullScreenBtn.style.display = isFullScreen ? "none" : "inline-block";
       };
       
-      // Listen for fullscreen change events across browsers
       document.addEventListener("fullscreenchange", toggleFullScreenButton);
       document.addEventListener("mozfullscreenchange", toggleFullScreenButton);
       document.addEventListener("webkitfullscreenchange", toggleFullScreenButton);
