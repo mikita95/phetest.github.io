@@ -16,6 +16,7 @@
       flex-direction: column;
       height: 100vh;
     }
+    /* Eye-tracking elements */
     #status {
       position: fixed;
       top: 20px;
@@ -57,21 +58,33 @@
     }
     .right-panel {
       width: 75%;
-      display: flex;
-      flex-direction: column;
+      position: relative; /* for overlaying tutorial info */
     }
     iframe {
       width: 100%;
       height: 100%;
       border: none;
     }
-    /* Tutorial info styling */
-    #tutorialInfo {
-      padding: 20px;
-      background-color: #e0f7fa;
+    /* Compact tutorial info overlay */
+    .tutorial-mode #tutorialInfo {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      background: rgba(224, 247, 250, 0.9);
       color: #00695c;
-      font-size: 16px;
+      font-size: 14px;
       text-align: center;
+      z-index: 1002;
+      border-radius: 4px;
+    }
+    .tutorial-mode #tutorialInfo button {
+      margin-top: 5px;
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -84,16 +97,17 @@
   </div>
   
   <div class="container">
-    <!-- Left panel holds the Google Form in non-tutorial modes -->
+    <!-- Left panel (Google Form) -->
     <div class="left-panel">
       <iframe id="googleForm" title="Google Form"></iframe>
     </div>
+    <!-- Right panel (PhET Simulation) -->
     <div class="right-panel">
-      <!-- Tutorial info displayed in tutorial mode -->
+      <!-- Tutorial info overlay (hidden by default) -->
       <div id="tutorialInfo" style="display:none;">
-        <p><strong>Welcome to Tutorial Mode!</strong></p>
-        <p>Explore the simulation on states of matter. Follow the on-screen instructions and have fun learning about gases, liquids, and solids.</p>
-        <p>When you're ready, click "Finish Tutorial" or wait for the next steps.</p>
+        <strong>Tutorial Mode</strong> – Explore the simulation. Click “Finish Tutorial” or wait for the next steps.
+        <br>
+        <button id="finishTutorialButton">Finish Tutorial</button>
       </div>
       <iframe id="phetSim" allowfullscreen title="PhET Simulation"></iframe>
     </div>
@@ -134,38 +148,23 @@
       const fullScreenBtn   = document.getElementById("fullScreenButton");
       const endTestBtn      = document.getElementById("endTestButton");
       const tutorialInfoDiv = document.getElementById("tutorialInfo");
+      const finishTutorialButton = document.getElementById("finishTutorialButton");
       
       const scenarioData = scenarios[selectedScenario] || scenarios['tutorial'];
       
       if (selectedScenario === 'tutorial') {
-        // Hide eye-tracking elements for tutorial mode
+        // Add a class to the body for tutorial-specific styling
+        document.body.classList.add('tutorial-mode');
+        // Hide eye-tracking elements
         statusEl.style.display = 'none';
         endTestBtn.style.display = 'none';
-        
-        // Hide the left panel and expand the right panel to full window
+        // Hide the left panel so the simulation uses the full window
         leftPanel.style.display = 'none';
         rightPanel.style.width = '100%';
-        rightPanel.style.height = '100vh';
-        rightPanel.style.display = 'flex';
-        rightPanel.style.flexDirection = 'column';
-        
-        // Set simulation source and adjust iframe to fill remaining space
+        // Set simulation source
         phetSimIframe.src = scenarioData.sim;
-        phetSimIframe.style.flex = '1';
-        
-        // Show tutorial description
+        // Display the compact tutorial info overlay
         tutorialInfoDiv.style.display = 'block';
-        
-        // Create a Finish Tutorial button
-        const finishTutorialButton = document.createElement('button');
-        finishTutorialButton.id = 'finishTutorialButton';
-        finishTutorialButton.textContent = 'Finish Tutorial';
-        finishTutorialButton.style.marginTop = '15px';
-        finishTutorialButton.style.padding = '10px 16px';
-        finishTutorialButton.style.fontSize = '16px';
-        finishTutorialButton.style.borderRadius = '4px';
-        finishTutorialButton.style.cursor = 'pointer';
-        tutorialInfoDiv.appendChild(finishTutorialButton);
         
         // Redirect function (update the placeholder URL as needed)
         const redirectTutorial = () => {
@@ -183,7 +182,7 @@
         phetSimIframe.src    = scenarioData.sim;
       }
       
-      // Only add eye-tracking functionality for non-tutorial modes
+      // Add eye-tracking functionality only for non-tutorial modes
       if (selectedScenario !== 'tutorial') {
         const endEyeTrackingTest = () => {
           if (window.opener) {
@@ -199,7 +198,7 @@
         });
       }
       
-      // Fullscreen functionality (common to all modes)
+      // Fullscreen functionality common to all scenarios
       fullScreenBtn.addEventListener("click", () => {
         const elem = document.documentElement;
         const requestFullscreen = elem.requestFullscreen ||
